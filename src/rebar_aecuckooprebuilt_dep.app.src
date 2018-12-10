@@ -1,0 +1,15 @@
+{application, rebar_aecuckooprebuilt_dep,
+ [{description, "Plugin enabling importing git repository of prebuilt Cuckoo Cycle executables in wrapper OTP application by specifying git repo as dependency"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.
