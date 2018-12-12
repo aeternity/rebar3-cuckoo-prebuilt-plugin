@@ -13,20 +13,6 @@
 -define(APP_DESC, "").
 -define(APP_VSN, "0.1.0").
 
--define(MAKEFILE, <<
-".PHONY: forced-priv
-forced-priv: rm-priv
-	cp -pR priv_src priv
-	rm -rf priv/.git
-
-.PHONY: rm-priv
-rm-priv:
-	rm -rf priv
-
-.PHONY: clean
-clean: rm-priv ;
-">>).
-
 -define(REBAR_CONFIG, <<
 "{pre_hooks, [{compile, \"make -s forced-priv\"}]}.
 {post_hooks, [{clean, \"make clean\"}]}.
@@ -41,7 +27,7 @@ download(Dir, Source, State) ->
     download_(Dir, ?APP_NAME, Source, State).
 
 download_(Dir, AppName, {?RESOURCE_TYPE, GitSource}, State) when is_binary(AppName) ->
-    Fs = [{filename:join(Dir, "Makefile"), ?MAKEFILE},
+    Fs = [{filename:join(Dir, "Makefile"), makefile(os:type())},
           {filename:join(Dir, "rebar.config"), ?REBAR_CONFIG},
           {app_src_file(Dir, AppName), minimal_app_src(AppName, ?APP_DESC, ?APP_VSN)}
          ],
@@ -78,6 +64,26 @@ force_write_files_([{Filename, Bytes} | T], ok) ->
 force_write_file(Filename, Bytes) ->
     ok = filelib:ensure_dir(Filename),
     file:write_file(Filename, Bytes).
+
+makefile({Osfamily, Osname}) ->
+    Template = <<
+"OS_FAMILY = {{osfamily}}
+OS_NAME = {{osname}}
+OS_RELDIR = $(OS_FAMILY)/$(OS_NAME)
+
+.PHONY: forced-priv
+forced-priv: rm-priv
+	if [ -e priv_src/$(OS_RELDIR) ]; then cp -pR priv_src/$(OS_RELDIR) priv; fi
+
+.PHONY: rm-priv
+rm-priv:
+	rm -rf priv
+
+.PHONY: clean
+clean: rm-priv ;
+">>,
+    Context = [{osfamily, Osfamily}, {osname, Osname}],
+    rebar_templater:render(Template, Context).
 
 minimal_app_src(AppName, Desc, Vsn) when is_binary(AppName),
                                          is_list(Desc), is_list(Vsn) ->
