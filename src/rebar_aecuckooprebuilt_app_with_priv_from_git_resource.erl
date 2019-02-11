@@ -12,7 +12,6 @@
 -define(APP_NAME, <<"aecuckooprebuilt">>).
 
 -define(APP_DESC, "").
--define(APP_VSN, "0.1.0").
 
 -define(REBAR_CONFIG, <<
 "{pre_hooks, [{compile, \"make -s forced-priv\"}]}.
@@ -28,9 +27,12 @@ lock(AppInfo, ResourceState) ->
     {?RESOURCE_TYPE, rebar_git_resource:lock(normalize_appinfo(AppInfo), ResourceState)}.
 
 download(Dir, AppInfo, ResourceState, RebarState) ->
+    {?RESOURCE_TYPE, Source} = rebar_app_info:source(AppInfo),
+    {git, _, {ref, GitRef}} = Source,
+    AppVsn = GitRef,
     Fs = [{filename:join(Dir, "Makefile"), makefile(os:type())},
           {filename:join(Dir, "rebar.config"), ?REBAR_CONFIG},
-          {app_src_file(Dir, ?APP_NAME), minimal_app_src(?APP_NAME, ?APP_DESC, ?APP_VSN)}
+          {app_src_file(Dir, ?APP_NAME), minimal_app_src(?APP_NAME, ?APP_DESC, AppVsn)}
          ],
     case force_write_files(Fs) of
         ok ->
@@ -117,3 +119,5 @@ normalize_appinfo(AppInfo0) ->
     Dir = rebar_app_info:dir(AppInfo0),
     AppInfo1 = rebar_app_info:source(AppInfo0, Source),
     rebar_app_info:dir(AppInfo1, priv_src_dir(Dir)).
+
+not_undefined(X) when X =/= undefined -> X.
