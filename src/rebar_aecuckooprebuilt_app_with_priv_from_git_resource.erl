@@ -1,11 +1,12 @@
 -module(rebar_aecuckooprebuilt_app_with_priv_from_git_resource).
 
--behaviour(rebar_resource).
+-behaviour(rebar_resource_v2).
 
--export([lock/2
-        ,download/3
-        ,needs_update/2
-        ,make_vsn/1]).
+-export([ init/2
+        , lock/2
+        , download/4
+        , needs_update/2
+        , make_vsn/2 ]).
 
 -define(RESOURCE_TYPE, aecuckooprebuilt_app_with_priv_from_git).
 -define(APP_NAME, <<"aecuckooprebuilt">>).
@@ -18,31 +19,34 @@
 {post_hooks, [{clean, \"make clean\"}]}.
 ">>).
 
-lock(AppDir, {?RESOURCE_TYPE, GitSource}) ->
-    {?RESOURCE_TYPE, rebar_git_resource:lock(priv_src_dir(AppDir), GitSource)}.
+init(Type, _RebarState) ->
+    CustomState = #{},
+    Resource = rebar_resource_v2:new(Type, ?MODULE, CustomState),
+    {ok, Resource}.
 
-download(Dir, Source, State) ->
-    %% Custom dep resources in rebar3 pre-3.7.0 do not have access to
-    %% app info, hence the plugin needs to hardcode the app name.
-    download_(Dir, ?APP_NAME, Source, State).
+lock(AppInfo, ResourceState) ->
+    {?RESOURCE_TYPE, rebar_git_resource:lock(normalize_appinfo(AppInfo), ResourceState)}.
 
-download_(Dir, AppName, {?RESOURCE_TYPE, GitSource}, State) when is_binary(AppName) ->
+download(Dir, AppInfo, ResourceState, RebarState) ->
     Fs = [{filename:join(Dir, "Makefile"), makefile(os:type())},
           {filename:join(Dir, "rebar.config"), ?REBAR_CONFIG},
-          {app_src_file(Dir, AppName), minimal_app_src(AppName, ?APP_DESC, ?APP_VSN)}
+          {app_src_file(Dir, ?APP_NAME), minimal_app_src(?APP_NAME, ?APP_DESC, ?APP_VSN)}
          ],
     case force_write_files(Fs) of
         ok ->
-            rebar_git_resource:download(priv_src_dir(Dir), GitSource, State);
+            rebar_git_resource:download(priv_src_dir(Dir), normalize_appinfo(AppInfo), ResourceState, RebarState);
         {error, _} = Err ->
             Err
     end.
 
-needs_update(Dir, {?RESOURCE_TYPE, GitSource}) ->
-    rebar_git_resource:needs_update(priv_src_dir(Dir), GitSource).
+needs_update(AppInfo, ResourceState) ->
+    rebar_git_resource:needs_update(normalize_appinfo(AppInfo), ResourceState).
 
 make_vsn(Dir) ->
     rebar_git_resource:make_vsn(priv_src_dir(Dir)).
+
+make_vsn(Dir, _ResourceState) ->
+    make_vsn(Dir).
 
 %%% Internal functions
 
@@ -107,3 +111,9 @@ app_src_file(Dir, AppName) ->
 
 src_dir(Dir) ->
     filename:join(Dir, "src").
+
+normalize_appinfo(AppInfo0) ->
+    {?RESOURCE_TYPE, Source} = rebar_app_info:source(AppInfo0),
+    Dir = rebar_app_info:dir(AppInfo0),
+    AppInfo1 = rebar_app_info:source(AppInfo0, Source),
+    rebar_app_info:dir(AppInfo1, priv_src_dir(Dir)).
