@@ -119,5 +119,3 @@ normalize_appinfo(AppInfo0) ->
     Dir = rebar_app_info:dir(AppInfo0),
     AppInfo1 = rebar_app_info:source(AppInfo0, Source),
     rebar_app_info:dir(AppInfo1, priv_src_dir(Dir)).
-
-not_undefined(X) when X =/= undefined -> X.
