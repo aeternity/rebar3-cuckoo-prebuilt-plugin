@@ -11,7 +11,7 @@
 -define(RESOURCE_TYPE, aecuckooprebuilt_app_with_priv_from_git).
 -define(APP_NAME, <<"aecuckooprebuilt">>).
 
--define(APP_DESC, "").
+-define(APP_DESC, "Prebuilt binary files for ecrecover NIF").
 
 -define(REBAR_CONFIG, <<
 "{pre_hooks, [{compile, \"make -s forced-priv\"}]}.
@@ -102,7 +102,7 @@ minimal_app_src(AppName, Desc, Vsn) when is_binary(AppName),
  [{description, \"{{desc}}\"},
   {vsn, \"{{vsn}}\"},
   {registered, []},
-  {applications, []}
+  {applications, [kernel,stdlib]}
  ]}.
 ">>,
     Context = [{name, AppName}, {desc, Desc}, {vsn, Vsn}],
