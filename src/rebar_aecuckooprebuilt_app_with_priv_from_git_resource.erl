@@ -11,7 +11,7 @@
 -define(RESOURCE_TYPE, aecuckooprebuilt_app_with_priv_from_git).
 -define(APP_NAME, <<"aecuckooprebuilt">>).
 
--define(APP_DESC, "Prebuilt binary files for ecrecover NIF").
+-define(APP_DESC, "Prebuilt binary files for cuckoo").
 
 -define(REBAR_CONFIG, <<
 "{pre_hooks, [{compile, \"make -s forced-priv\"}]}.
